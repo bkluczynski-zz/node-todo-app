@@ -1,6 +1,8 @@
 const request = require('supertest');
 const expect = require('expect');
 const { ObjectID } = require('mongodb');
+const _ = require('lodash');
+
 
 const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
@@ -13,6 +15,8 @@ const todos = [
   {
     _id: new ObjectID(),
     text: 'Second test todo',
+    completed: true,
+    completedAt: 333,
   },
 ];
 
@@ -121,6 +125,32 @@ describe('DELETE/todos/:id', () => {
     request(app)
       .delete('/todos/invalid_object_id-123-123')
       .expect(404)
+      .end(done);
+  });
+});
+describe('PATCH/todos/:id', () => {
+  it('should change completed to true', (done) => {
+    request(app)
+      .patch(`/todos/${todos[0]._id.toHexString()}`)
+      .send({ completed: true, text: 'I like cherries' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBe('I like cherries');
+        expect(res.body.todo.completed).toBe(true);
+        expect(res.body.todo.completedAt).toBeA('number');
+      })
+      .end(done);
+  });
+  it('should change completed to false', (done) => {
+    request(app)
+      .patch(`/todos/${todos[0]._id.toHexString()}`)
+      .send({ completed: false, text: 'I like bananas' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBe('I like bananas');
+        expect(res.body.todo.completed).toBe(false);
+        expect(res.body.todo.completedAt).toNotExist();
+      })
       .end(done);
   });
 });
