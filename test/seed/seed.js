@@ -50,4 +50,6 @@ const populateUsers = (done) => {
   }).then(() => done());
 };
 
-module.exports = { todos, populateTodos, users, populateUsers };
+module.exports = {
+  todos, populateTodos, users, populateUsers
+};

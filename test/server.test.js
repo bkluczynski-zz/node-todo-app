@@ -6,6 +6,7 @@ const _ = require('lodash');
 
 const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
+const { User } = require('./../models/user');
 const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
 const todo = {
@@ -140,4 +141,64 @@ describe('PATCH/todos/:id', () => {
       })
       .end(done);
   });
+});
+
+describe('USERS', () => {
+  it('should return user if authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email);
+      })
+      .end(done);
+  });
+  it('should not return user if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({});
+      })
+      .end(done);
+  });
+  it('should create a user', (done) => {
+    request(app)
+      .post('/users')
+      .send({ email: 'myfancyemail@gmail.com', password: 'mypassword' })
+      .expect(200)
+      .expect((res) => {
+        expect(res.headers['x-auth']).toExist();
+        expect(res.body.email).toBe('myfancyemail@gmail.com');
+        expect(res.body._id).toExist();
+      })
+      .end((err) => {
+        if (err) return done(err);
+
+        User.findOne({ email: 'myfancyemail@gmail.com' }).then((user) => {
+          expect(user).toExist();
+          expect(user.password).toNotBe('password')
+          done();
+        });
+      });
+  });
+  it('should return validation errors if request invalid', (done) => {
+    request(app)
+      .post('/users')
+      .send({ email: '123@gmail.com' })
+      .expect(400)
+      .end(done);
+  });
+  it('should not create the user if email is already in use', (done) => {
+    request(app)
+      .post('/users')
+      .send({ email: users[0].email })
+      .expect((res) => {
+        expect(res.body.errors).toExist();
+      })
+      .end(done);
+  });
+
 });
