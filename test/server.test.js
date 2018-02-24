@@ -6,28 +6,15 @@ const _ = require('lodash');
 
 const { app } = require('./../server');
 const { Todo } = require('./../models/todo');
-
-const todos = [
-  {
-    _id: new ObjectID(),
-    text: 'First test todo',
-  },
-  {
-    _id: new ObjectID(),
-    text: 'Second test todo',
-    completed: true,
-    completedAt: 333,
-  },
-];
+const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
 const todo = {
   _id: new ObjectID(),
   text: 'Lonely todo',
-}
+};
 
-beforeEach((done) => {
-  Todo.remove({}).then(() => Todo.insertMany(todos)).then(() => done());
-});
+beforeEach(populateTodos);
+beforeEach(populateUsers);
 
 
 describe('POST/todos', () => {
