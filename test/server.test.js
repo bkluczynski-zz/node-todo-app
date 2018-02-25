@@ -200,5 +200,4 @@ describe('USERS', () => {
       })
       .end(done);
   });
-
 });
