@@ -181,7 +181,7 @@ describe('USERS', () => {
           expect(user).toExist();
           expect(user.password).toNotBe('password')
           done();
-        });
+        }).catch(e => done(e));
       });
   });
   it('should return validation errors if request invalid', (done) => {
@@ -198,6 +198,36 @@ describe('USERS', () => {
       .expect((res) => {
         expect(res.body.errors).toExist();
       })
+      .end(done);
+  });
+});
+describe('POST /users/login', () => {
+  it('should allow to log in the user', (done) => {
+    request(app)
+      .post('/users/login')
+      .send({ email: users[0].email, password: users[0].password })
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email);
+      })
+      .end((err, res) => {
+        if (err) return done(err);
+        User.findById(users[0]._id).then((user) => {
+          console.log('user.tokens', user.tokens.length);
+          expect(user.tokens[1]).toInclude({
+            access: 'auth',
+            token: res.headers['x-auth'],
+          });
+          done();
+        }).catch(e => done(e));
+      });
+  });
+  it('should reject invalid login', (done) => {
+    request(app)
+      .post('/users/login')
+      .send({ email: 'someEmail@gmail.com', password: 'someInvalidPassword' })
+      .expect(400)
       .end(done);
   });
 });
