@@ -69,6 +69,7 @@ describe('GET/todos', () => {
   it('should get a single doc', (done) => {
     request(app)
       .get(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect((res) => {
         expect(res.body.todo.text).toBe(todos[0].text);
@@ -78,12 +79,21 @@ describe('GET/todos', () => {
   it('should return 404 if todo was not found', (done) => {
     request(app)
       .get(`/todos/${todo._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
   it('should return 404 for invalid ObjectID', (done) => {
     request(app)
       .get('/todos/invalid_object_id-123-123')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(404)
+      .end(done);
+  });
+  it('should not get a single doc by other user', (done) => {
+    request(app)
+      .get(`/todos/${todos[1]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -92,6 +102,7 @@ describe('DELETE/todos/:id', () => {
   it('should delete a todo', (done) => {
     request(app)
       .delete(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(200)
       .expect((res) => {
         expect(res.body.todo.text).toBe(todos[0].text);
@@ -106,15 +117,32 @@ describe('DELETE/todos/:id', () => {
         }).catch(e => done(e));
       });
   });
+  it('should not delete a todo', (done) => {
+    request(app)
+      .delete(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[1].tokens[0].token)
+      .expect(404)
+      .end((err, res) => {
+        if (err) {
+          return done(err);
+        }
+        Todo.findById(todos[0]._id).then((todo) => {
+          expect(todo).toExist();
+          done();
+        }).catch(e => done(e));
+      });
+  });
   it('should return 404 if todo was not found', (done) => {
     request(app)
       .delete(`/todos/${todo._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
   it('should return 404 for invalid ObjectID', (done) => {
     request(app)
       .delete('/todos/invalid_object_id-123-123')
+      .set('x-auth', users[0].tokens[0].token)
       .expect(404)
       .end(done);
   });
@@ -123,6 +151,7 @@ describe('PATCH/todos/:id', () => {
   it('should change completed to true', (done) => {
     request(app)
       .patch(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .send({ completed: true, text: 'I like cherries' })
       .expect(200)
       .expect((res) => {
@@ -132,9 +161,18 @@ describe('PATCH/todos/:id', () => {
       })
       .end(done);
   });
+  it('should not change completed to true', (done) => {
+    request(app)
+      .patch(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[1].tokens[0].token)
+      .send({ completed: true, text: 'I like cherries' })
+      .expect(404)
+      .end(done);
+  });
   it('should change completed to false', (done) => {
     request(app)
       .patch(`/todos/${todos[0]._id.toHexString()}`)
+      .set('x-auth', users[0].tokens[0].token)
       .send({ completed: false, text: 'I like bananas' })
       .expect(200)
       .expect((res) => {
