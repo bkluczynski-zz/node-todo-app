@@ -1,4 +1,4 @@
-require('./config');
+require('./config/config');
 
 const { authenticate } = require('./middleware/authenticate');
 const _ = require('lodash');
